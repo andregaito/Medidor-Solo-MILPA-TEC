@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoramento de Solo - Grid 5x5</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .grid-cell { transition: all 0.2s; cursor: pointer; }
+        .grid-cell:hover { transform: scale(1.05); }
+        .active-cell { border-color: #3b82f6; border-width: 4px; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans p-6 min-h-screen">
+
+    <div class="max-w-6xl mx-auto space-y-6">
+        <!-- Cabeçalho -->
+        <header class="bg-white p-6 rounded-xl shadow-sm flex items-center justify-between">
+            <h1 class="text-2xl font-bold text-green-700">Painel de Monitoramento Agrícola</h1>
+            <div class="text-sm text-gray-500">Status: <span class="text-green-500 font-bold">Online</span></div>
+        </header>
+
+        <!-- Parâmetros Globais do Ar -->
+        <section class="bg-white p-6 rounded-xl shadow-sm">
+            <h2 class="text-lg font-semibold mb-4 text-gray-700">Condições Atmosféricas (Globais)</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="p-4 bg-blue-50 rounded-lg"><p class="text-sm text-gray-500">Temperatura do Ar</p><p class="text-xl font-bold" id="ar-temp">28.5 °C</p></div>
+                <div class="p-4 bg-blue-50 rounded-lg"><p class="text-sm text-gray-500">Umidade do Ar</p><p class="text-xl font-bold" id="ar-umid">65 %</p></div>
+                <div class="p-4 bg-blue-50 rounded-lg"><p class="text-sm text-gray-500">Pressão</p><p class="text-xl font-bold" id="ar-pressao">1012 hPa</p></div>
+                <div class="p-4 bg-blue-50 rounded-lg"><p class="text-sm text-gray-500">Irradiância</p><p class="text-xl font-bold" id="ar-irrad">850 W/m²</p></div>
+            </div>
+        </section>
+
+        <!-- Área Principal: Grid e Detalhes -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <!-- Grid 5x5 -->
+            <section class="md:col-span-2 bg-white p-6 rounded-xl shadow-sm flex flex-col items-center">
+                <h2 class="text-lg font-semibold mb-4 text-gray-700 w-full">Mapa do Terreno (25 m²)</h2>
+                <div id="soil-grid" class="grid grid-cols-5 gap-2 w-full max-w-md aspect-square bg-gray-200 p-2 rounded-lg">
+                    <!-- Gerado via JavaScript -->
+                </div>
+                <p class="text-sm text-gray-400 mt-4">Selecione uma célula para ver os dados do solo.</p>
+            </section>
+
+            <!-- Painel de Detalhes do Solo -->
+            <section class="bg-white p-6 rounded-xl shadow-sm">
+                <h2 class="text-lg font-semibold mb-4 text-gray-700">Dados do Solo - Célula <span id="cell-id-display">--</span></h2>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <span class="text-gray-600">Temperatura</span>
+                        <span class="font-bold text-red-500" id="solo-temp">-- °C</span>
+                    </div>
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <span class="text-gray-600">Umidade</span>
+                        <span class="font-bold text-blue-500" id="solo-umid">-- %</span>
+                    </div>
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <span class="text-gray-600">pH</span>
+                        <span class="font-bold text-purple-500" id="solo-ph">--</span>
+                    </div>
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <span class="text-gray-600">Salinidade</span>
+                        <span class="font-bold text-orange-500" id="solo-sal">-- mS/cm</span>
+                    </div>
+                    <div class="mt-4">
+                        <span class="text-gray-600 block mb-2">Índices NPK (mg/kg)</span>
+                        <div class="flex justify-between text-sm text-center">
+                            <div class="bg-green-100 p-2 rounded flex-1 mr-1"><span class="block font-bold text-green-700" id="solo-n">--</span>N</div>
+                            <div class="bg-blue-100 p-2 rounded flex-1 mx-1"><span class="block font-bold text-blue-700" id="solo-p">--</span>P</div>
+                            <div class="bg-yellow-100 p-2 rounded flex-1 ml-1"><span class="block font-bold text-yellow-700" id="solo-k">--</span>K</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // Simulando a geração de dados para as 25 posições (5x5)
+        const soilData = [];
+        for(let i = 0; i < 25; i++) {
+            soilData.push({
+                id: i + 1,
+                temp: (22 + Math.random() * 5).toFixed(1),
+                umid: (40 + Math.random() * 30).toFixed(1),
+                ph: (5.5 + Math.random() * 1.5).toFixed(1),
+                salinidade: (1.2 + Math.random() * 0.8).toFixed(2),
+                N: Math.floor(80 + Math.random() * 40),
+                P: Math.floor(30 + Math.random() * 20),
+                K: Math.floor(100 + Math.random() * 50)
+            });
+        }
+
+        const gridContainer = document.getElementById('soil-grid');
+        let selectedCellId = 1;
+
+        // Função para atualizar o painel lateral
+        function updatePanel(id) {
+            const data = soilData[id - 1];
+            document.getElementById('cell-id-display').innerText = id;
+            document.getElementById('solo-temp').innerText = data.temp + ' °C';
+            document.getElementById('solo-umid').innerText = data.umid + ' %';
+            document.getElementById('solo-ph').innerText = data.ph;
+            document.getElementById('solo-sal').innerText = data.salinidade + ' mS/cm';
+            document.getElementById('solo-n').innerText = data.N;
+            document.getElementById('solo-p').innerText = data.P;
+            document.getElementById('solo-k').innerText = data.K;
+
+            // Atualiza destaque visual no grid
+            document.querySelectorAll('.grid-cell').forEach(cell => cell.classList.remove('active-cell'));
+            document.getElementById(`cell-${id}`).classList.add('active-cell');
+        }
+
+        // Renderiza o grid
+        soilData.forEach(data => {
+            const cell = document.createElement('div');
+            cell.id = `cell-${data.id}`;
+            // Cores baseadas na umidade para dar um efeito visual ao grid
+            const opacity = (data.umid - 40) / 30; // Normaliza entre 0 e 1
+            cell.className = `grid-cell bg-green-600 rounded-md shadow-sm h-full w-full flex items-center justify-center text-xs text-white font-bold`;
+            cell.style.backgroundColor = `rgba(34, 197, 94, ${0.4 + (opacity * 0.6)})`;
+            cell.innerText = data.id;
+            
+            cell.onclick = () => updatePanel(data.id);
+            gridContainer.appendChild(cell);
+        });
+
+        // Inicia com a célula 1 selecionada
+        updatePanel(1);
+    </script>
+</body>
+</html>
