@@ -6,128 +6,198 @@
     <title>Monitoramento de Solo - Grid 5x5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .grid-cell { transition: all 0.2s; cursor: pointer; }
-        .grid-cell:hover { transform: scale(1.05); }
-        .active-cell { border-color: #3b82f6; border-width: 4px; }
+        .grid-cell { transition: all 0.3s ease; cursor: pointer; }
+        .grid-cell:hover { transform: scale(1.05); z-index: 10; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .active-cell { border-color: #111827; border-width: 3px; }
+        .heatmap-btn { transition: all 0.2s ease; cursor: pointer; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans p-6 min-h-screen">
 
-    <div class="max-w-6xl mx-auto space-y-6">
+    <div class="max-w-7xl mx-auto space-y-6">
         <!-- Cabeçalho -->
         <header class="bg-white p-6 rounded-xl shadow-sm flex items-center justify-between">
             <h1 class="text-2xl font-bold text-green-700">Painel de Monitoramento Agrícola</h1>
             <div class="text-sm text-gray-500">Status: <span class="text-green-500 font-bold">Online</span></div>
         </header>
 
-        <!-- Parâmetros Globais do Ar -->
-        <section class="bg-white p-6 rounded-xl shadow-sm">
-            <h2 class="text-lg font-semibold mb-4 text-gray-700">Condições Atmosféricas (Globais)</h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="p-4 bg-blue-50 rounded-lg"><p class="text-sm text-gray-500">Temperatura do Ar</p><p class="text-xl font-bold" id="ar-temp">28.5 °C</p></div>
-                <div class="p-4 bg-blue-50 rounded-lg"><p class="text-sm text-gray-500">Umidade do Ar</p><p class="text-xl font-bold" id="ar-umid">65 %</p></div>
-                <div class="p-4 bg-blue-50 rounded-lg"><p class="text-sm text-gray-500">Pressão</p><p class="text-xl font-bold" id="ar-pressao">1012 hPa</p></div>
-                <div class="p-4 bg-blue-50 rounded-lg"><p class="text-sm text-gray-500">Irradiância</p><p class="text-xl font-bold" id="ar-irrad">850 W/m²</p></div>
-            </div>
-        </section>
-
-        <!-- Área Principal: Grid e Detalhes -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
             
-            <!-- Grid 5x5 -->
-            <section class="md:col-span-2 bg-white p-6 rounded-xl shadow-sm flex flex-col items-center">
-                <h2 class="text-lg font-semibold mb-4 text-gray-700 w-full">Mapa do Terreno (25 m²)</h2>
-                <div id="soil-grid" class="grid grid-cols-5 gap-2 w-full max-w-md aspect-square bg-gray-200 p-2 rounded-lg">
-                    <!-- Gerado via JavaScript -->
+            <!-- Painel de Seleção de Variáveis (Esquerda) -->
+            <section class="bg-white p-6 rounded-xl shadow-sm lg:col-span-1 flex flex-col gap-4">
+                <h2 class="text-lg font-semibold text-gray-700 leading-tight">1. Selecione a Variável para o Mapa de Calor</h2>
+                <p class="text-xs text-gray-500 mb-2">Clique nos blocos abaixo para alterar a cor do grid.</p>
+                
+                <div class="space-y-3">
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider">Parâmetros do Ar</h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div onclick="setHeatmap('ar_temp')" id="btn-ar_temp" class="heatmap-btn border p-3 rounded-lg hover:bg-gray-50"><p class="text-xs text-gray-500">Temp. Ar</p></div>
+                        <div onclick="setHeatmap('ar_umid')" id="btn-ar_umid" class="heatmap-btn border p-3 rounded-lg hover:bg-gray-50"><p class="text-xs text-gray-500">Umid. Ar</p></div>
+                        <div onclick="setHeatmap('ar_pressao')" id="btn-ar_pressao" class="heatmap-btn border p-3 rounded-lg hover:bg-gray-50"><p class="text-xs text-gray-500">Pressão</p></div>
+                        <div onclick="setHeatmap('ar_irrad')" id="btn-ar_irrad" class="heatmap-btn border p-3 rounded-lg hover:bg-gray-50"><p class="text-xs text-gray-500">Irradiância</p></div>
+                    </div>
+
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider pt-2 border-t">Parâmetros do Solo</h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div onclick="setHeatmap('solo_temp')" id="btn-solo_temp" class="heatmap-btn border p-3 rounded-lg hover:bg-gray-50"><p class="text-xs text-gray-500">Temp. Solo</p></div>
+                        <div onclick="setHeatmap('solo_umid')" id="btn-solo_umid" class="heatmap-btn border p-3 rounded-lg hover:bg-gray-50"><p class="text-xs text-gray-500">Umid. Solo</p></div>
+                        <div onclick="setHeatmap('solo_ph')" id="btn-solo_ph" class="heatmap-btn border p-3 rounded-lg hover:bg-gray-50"><p class="text-xs text-gray-500">pH Solo</p></div>
+                        <div onclick="setHeatmap('solo_sal')" id="btn-solo_sal" class="heatmap-btn border p-3 rounded-lg hover:bg-gray-50"><p class="text-xs text-gray-500">Salinidade</p></div>
+                    </div>
+
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider pt-2 border-t">Índices NPK</h3>
+                    <div class="grid grid-cols-1 gap-2">
+                        <div onclick="setHeatmap('solo_n')" id="btn-solo_n" class="heatmap-btn border p-3 rounded-lg hover:bg-gray-50"><p class="text-xs text-gray-500">Nitrogênio (N)</p></div>
+                        <div onclick="setHeatmap('solo_p')" id="btn-solo_p" class="heatmap-btn border p-3 rounded-lg hover:bg-gray-50"><p class="text-xs text-gray-500">Fósforo (P)</p></div>
+                        <div onclick="setHeatmap('solo_k')" id="btn-solo_k" class="heatmap-btn border p-3 rounded-lg hover:bg-gray-50"><p class="text-xs text-gray-500">Potássio (K)</p></div>
+                    </div>
                 </div>
-                <p class="text-sm text-gray-400 mt-4">Selecione uma célula para ver os dados do solo.</p>
             </section>
 
-            <!-- Painel de Detalhes do Solo -->
-            <section class="bg-white p-6 rounded-xl shadow-sm">
-                <h2 class="text-lg font-semibold mb-4 text-gray-700">Dados do Solo - Célula <span id="cell-id-display">--</span></h2>
+            <!-- Área Principal: Grid (Centro) -->
+            <section class="bg-white p-6 rounded-xl shadow-sm lg:col-span-2 flex flex-col items-center justify-center">
+                <h2 class="text-lg font-semibold mb-2 text-gray-700 w-full text-center">2. Mapa do Terreno (25 m²)</h2>
+                <p class="text-sm text-gray-500 mb-6 w-full text-center">Visualizando: <span id="current-heatmap-label" class="font-bold text-blue-600">Umidade Solo</span></p>
+                
+                <div id="soil-grid" class="grid grid-cols-5 gap-2 w-full max-w-md aspect-square bg-gray-200 p-2 rounded-lg relative">
+                    <!-- Gerado via JavaScript -->
+                </div>
+                <p class="text-sm text-gray-400 mt-4">Clique em um quadrado para ver os dados detalhados ao lado.</p>
+            </section>
+
+            <!-- Painel de Detalhes da Célula Selecionada (Direita) -->
+            <section class="bg-white p-6 rounded-xl shadow-sm lg:col-span-1">
+                <h2 class="text-lg font-semibold mb-4 text-gray-700 border-b pb-2">3. Dados da Célula: <span id="cell-id-display" class="text-blue-600">--</span></h2>
+                
                 <div class="space-y-4">
-                    <div class="flex justify-between items-center border-b pb-2">
-                        <span class="text-gray-600">Temperatura</span>
-                        <span class="font-bold text-red-500" id="solo-temp">-- °C</span>
-                    </div>
-                    <div class="flex justify-between items-center border-b pb-2">
-                        <span class="text-gray-600">Umidade</span>
-                        <span class="font-bold text-blue-500" id="solo-umid">-- %</span>
-                    </div>
-                    <div class="flex justify-between items-center border-b pb-2">
-                        <span class="text-gray-600">pH</span>
-                        <span class="font-bold text-purple-500" id="solo-ph">--</span>
-                    </div>
-                    <div class="flex justify-between items-center border-b pb-2">
-                        <span class="text-gray-600">Salinidade</span>
-                        <span class="font-bold text-orange-500" id="solo-sal">-- mS/cm</span>
-                    </div>
-                    <div class="mt-4">
-                        <span class="text-gray-600 block mb-2">Índices NPK (mg/kg)</span>
-                        <div class="flex justify-between text-sm text-center">
-                            <div class="bg-green-100 p-2 rounded flex-1 mr-1"><span class="block font-bold text-green-700" id="solo-n">--</span>N</div>
-                            <div class="bg-blue-100 p-2 rounded flex-1 mx-1"><span class="block font-bold text-blue-700" id="solo-p">--</span>P</div>
-                            <div class="bg-yellow-100 p-2 rounded flex-1 ml-1"><span class="block font-bold text-yellow-700" id="solo-k">--</span>K</div>
-                        </div>
-                    </div>
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Atmosfera Local</h3>
+                    <div class="flex justify-between items-center"><span class="text-sm text-gray-600">Temperatura do Ar</span><span class="font-medium" id="detalhe-ar-temp">--</span></div>
+                    <div class="flex justify-between items-center"><span class="text-sm text-gray-600">Umidade do Ar</span><span class="font-medium" id="detalhe-ar-umid">--</span></div>
+                    <div class="flex justify-between items-center"><span class="text-sm text-gray-600">Pressão</span><span class="font-medium" id="detalhe-ar-pressao">--</span></div>
+                    <div class="flex justify-between items-center"><span class="text-sm text-gray-600">Irradiância</span><span class="font-medium" id="detalhe-ar-irrad">--</span></div>
+
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider pt-2 border-t">Solo</h3>
+                    <div class="flex justify-between items-center"><span class="text-sm text-gray-600">Temperatura Solo</span><span class="font-bold text-orange-500" id="detalhe-solo-temp">--</span></div>
+                    <div class="flex justify-between items-center"><span class="text-sm text-gray-600">Umidade Solo</span><span class="font-bold text-blue-500" id="detalhe-solo-umid">--</span></div>
+                    <div class="flex justify-between items-center"><span class="text-sm text-gray-600">pH Solo</span><span class="font-bold text-purple-500" id="detalhe-solo-ph">--</span></div>
+                    <div class="flex justify-between items-center"><span class="text-sm text-gray-600">Salinidade Solo</span><span class="font-bold text-teal-500" id="detalhe-solo-sal">--</span></div>
+
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider pt-2 border-t">Nutrientes NPK</h3>
+                    <div class="flex justify-between items-center"><span class="text-sm text-gray-600">Nitrogênio (N)</span><span class="font-bold text-green-600" id="detalhe-solo-n">--</span></div>
+                    <div class="flex justify-between items-center"><span class="text-sm text-gray-600">Fósforo (P)</span><span class="font-bold text-blue-600" id="detalhe-solo-p">--</span></div>
+                    <div class="flex justify-between items-center"><span class="text-sm text-gray-600">Potássio (K)</span><span class="font-bold text-yellow-600" id="detalhe-solo-k">--</span></div>
                 </div>
             </section>
         </div>
     </div>
 
     <script>
-        // Simulando a geração de dados para as 25 posições (5x5)
+        // Simulando dados para as 25 posições (5x5) com pequenas variações para criar o efeito de mapa de calor
         const soilData = [];
         for(let i = 0; i < 25; i++) {
             soilData.push({
                 id: i + 1,
-                temp: (22 + Math.random() * 5).toFixed(1),
-                umid: (40 + Math.random() * 30).toFixed(1),
-                ph: (5.5 + Math.random() * 1.5).toFixed(1),
-                salinidade: (1.2 + Math.random() * 0.8).toFixed(2),
-                N: Math.floor(80 + Math.random() * 40),
-                P: Math.floor(30 + Math.random() * 20),
-                K: Math.floor(100 + Math.random() * 50)
+                ar_temp: (27 + Math.random() * 3).toFixed(1), // 27 a 30 °C
+                ar_umid: (60 + Math.random() * 10).toFixed(1), // 60 a 70 %
+                ar_pressao: Math.floor(1010 + Math.random() * 5), // 1010 a 1015 hPa
+                ar_irrad: Math.floor(800 + Math.random() * 150), // 800 a 950 W/m²
+                solo_temp: (22 + Math.random() * 5).toFixed(1), // 22 a 27 °C
+                solo_umid: (40 + Math.random() * 30).toFixed(1), // 40 a 70 %
+                solo_ph: (5.5 + Math.random() * 1.5).toFixed(1), // 5.5 a 7.0
+                solo_sal: (1.2 + Math.random() * 0.8).toFixed(2), // 1.2 a 2.0 mS/cm
+                solo_n: Math.floor(80 + Math.random() * 40), // 80 a 120 mg/kg
+                solo_p: Math.floor(30 + Math.random() * 20), // 30 a 50 mg/kg
+                solo_k: Math.floor(100 + Math.random() * 50) // 100 a 150 mg/kg
             });
         }
 
         const gridContainer = document.getElementById('soil-grid');
-        let selectedCellId = 1;
+        let activeHeatmapVar = 'solo_umid'; // Variável padrão ao carregar a página
+        
+        // Mapeamento de nomes para exibição
+        const labels = {
+            ar_temp: 'Temperatura do Ar', ar_umid: 'Umidade do Ar', ar_pressao: 'Pressão Atmosférica', ar_irrad: 'Irradiância',
+            solo_temp: 'Temperatura Solo', solo_umid: 'Umidade Solo', solo_ph: 'pH Solo', solo_sal: 'Salinidade Solo',
+            solo_n: 'Nitrogênio (N)', solo_p: 'Fósforo (P)', solo_k: 'Potássio (K)'
+        };
 
-        // Função para atualizar o painel lateral
-        function updatePanel(id) {
-            const data = soilData[id - 1];
-            document.getElementById('cell-id-display').innerText = id;
-            document.getElementById('solo-temp').innerText = data.temp + ' °C';
-            document.getElementById('solo-umid').innerText = data.umid + ' %';
-            document.getElementById('solo-ph').innerText = data.ph;
-            document.getElementById('solo-sal').innerText = data.salinidade + ' mS/cm';
-            document.getElementById('solo-n').innerText = data.N;
-            document.getElementById('solo-p').innerText = data.P;
-            document.getElementById('solo-k').innerText = data.K;
-
-            // Atualiza destaque visual no grid
-            document.querySelectorAll('.grid-cell').forEach(cell => cell.classList.remove('active-cell'));
-            document.getElementById(`cell-${id}`).classList.add('active-cell');
-        }
-
-        // Renderiza o grid
+        // Renderiza os blocos do grid na tela
         soilData.forEach(data => {
             const cell = document.createElement('div');
             cell.id = `cell-${data.id}`;
-            // Cores baseadas na umidade para dar um efeito visual ao grid
-            const opacity = (data.umid - 40) / 30; // Normaliza entre 0 e 1
-            cell.className = `grid-cell bg-green-600 rounded-md shadow-sm h-full w-full flex items-center justify-center text-xs text-white font-bold`;
-            cell.style.backgroundColor = `rgba(34, 197, 94, ${0.4 + (opacity * 0.6)})`;
+            cell.className = `grid-cell rounded-md shadow-sm h-full w-full flex items-center justify-center text-xs font-bold border-2 border-transparent`;
             cell.innerText = data.id;
-            
-            cell.onclick = () => updatePanel(data.id);
+            cell.onclick = () => updateDetailsPanel(data.id);
             gridContainer.appendChild(cell);
         });
 
-        // Inicia com a célula 1 selecionada
-        updatePanel(1);
+        // Função para atualizar as cores do mapa de calor
+        function setHeatmap(variable) {
+            activeHeatmapVar = variable;
+            document.getElementById('current-heatmap-label').innerText = labels[variable];
+
+            // Resetar botões
+            document.querySelectorAll('.heatmap-btn').forEach(btn => {
+                btn.classList.remove('ring-2', 'ring-blue-500', 'bg-blue-50', 'border-blue-500');
+            });
+            // Destacar botão ativo
+            document.getElementById('btn-' + variable).classList.add('ring-2', 'ring-blue-500', 'bg-blue-50', 'border-blue-500');
+
+            // Achar Min e Max para criar a escala de cor proporcional
+            const values = soilData.map(d => parseFloat(d[variable]));
+            const min = Math.min(...values);
+            let max = Math.max(...values);
+            if(max === min) max = min + 1; // Previne divisão por zero
+
+            // Definir cor base do RGB de acordo com a variável
+            let r=34, g=197, b=94; // Verde padrão
+            if(variable.includes('temp') || variable.includes('irrad')) { r=239; g=68; b=68; } // Vermelho
+            if(variable.includes('umid') || variable.includes('pressao')) { r=59; g=130; b=246; } // Azul
+            if(variable.includes('sal') || variable.includes('ph')) { r=168; g=85; b=247; } // Roxo
+            if(variable === 'solo_k') { r=234; g=179; b=8; } // Amarelo
+            
+            soilData.forEach(data => {
+                const val = parseFloat(data[variable]);
+                const normalized = (val - min) / (max - min);
+                const opacity = 0.2 + (normalized * 0.8); // Varia de 0.2 (fraco) a 1.0 (forte)
+
+                const cell = document.getElementById(`cell-${data.id}`);
+                cell.style.backgroundColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+                // Ajusta cor do texto para dar contraste
+                cell.style.color = opacity > 0.5 ? 'white' : '#1f2937';
+            });
+        }
+
+        // Função para atualizar o painel lateral com os detalhes do quadrado clicado
+        function updateDetailsPanel(id) {
+            const data = soilData[id - 1];
+            document.getElementById('cell-id-display').innerText = id;
+            
+            // Atmosfera
+            document.getElementById('detalhe-ar-temp').innerText = data.ar_temp + ' °C';
+            document.getElementById('detalhe-ar-umid').innerText = data.ar_umid + ' %';
+            document.getElementById('detalhe-ar-pressao').innerText = data.ar_pressao + ' hPa';
+            document.getElementById('detalhe-ar-irrad').innerText = data.ar_irrad + ' W/m²';
+            
+            // Solo
+            document.getElementById('detalhe-solo-temp').innerText = data.solo_temp + ' °C';
+            document.getElementById('detalhe-solo-umid').innerText = data.solo_umid + ' %';
+            document.getElementById('detalhe-solo-ph').innerText = data.solo_ph;
+            document.getElementById('detalhe-solo-sal').innerText = data.solo_sal + ' mS/cm';
+            
+            // NPK
+            document.getElementById('detalhe-solo-n').innerText = data.solo_n + ' mg/kg';
+            document.getElementById('detalhe-solo-p').innerText = data.solo_p + ' mg/kg';
+            document.getElementById('detalhe-solo-k').innerText = data.solo_k + ' mg/kg';
+
+            // Destacar visualmente no grid
+            document.querySelectorAll('.grid-cell').forEach(c => c.classList.remove('active-cell'));
+            document.getElementById(`cell-${id}`).classList.add('active-cell');
+        }
+
+        // Inicialização: define mapa de calor para Umidade do Solo e abre os detalhes da célula 1
+        setHeatmap('solo_umid');
+        updateDetailsPanel(1);
     </script>
 </body>
 </html>
