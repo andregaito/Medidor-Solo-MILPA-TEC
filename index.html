@@ -24,13 +24,13 @@
 
         <!-- Variáveis Globais (Clicáveis para Mapa de Calor) -->
         <section class="bg-white p-6 rounded-xl shadow-sm">
-            <h2 class="text-lg font-semibold mb-2 text-gray-700">Condições Globais (Clique para ver o Mapa de Calor)</h2>
-            <p class="text-xs text-gray-500 mb-4">Os valores representam a média do terreno. Clique nos blocos para mapear a distribuição no grid.</p>
+            <h2 class="text-lg font-semibold mb-2 text-gray-700">Condições Globais</h2>
+            <p class="text-xs text-gray-500 mb-4">Os valores representam a média do terreno. Clique nos blocos para mapear a distribuição no terreno</p>
             
             <div class="space-y-4">
                 <!-- Atmosfera -->
                 <div>
-                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Atmosfera</h3>
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Dados Atmosféricos (Média Sensores)</h3>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <div id="btn-ar_temp" onclick="setHeatmap('ar_temp')" class="global-card bg-gray-50 p-4 rounded-lg"><p class="text-sm text-gray-500">Temperatura Ar</p><p class="text-xl font-bold" id="global-ar_temp">--</p></div>
                         <div id="btn-ar_umid" onclick="setHeatmap('ar_umid')" class="global-card bg-gray-50 p-4 rounded-lg"><p class="text-sm text-gray-500">Umidade Ar</p><p class="text-xl font-bold" id="global-ar_umid">--</p></div>
@@ -41,7 +41,7 @@
 
                 <!-- Solo e NPK -->
                 <div class="pt-2">
-                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Solo e Nutrientes (Média)</h3>
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Dados Solo e Nutrientes (Média Sensores)</h3>
                     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
                         <div id="btn-solo_temp" onclick="setHeatmap('solo_temp')" class="global-card bg-gray-50 p-3 rounded-lg"><p class="text-xs text-gray-500">Temperatura Solo</p><p class="text-lg font-bold" id="global-solo_temp">--</p></div>
                         <div id="btn-solo_umid" onclick="setHeatmap('solo_umid')" class="global-card bg-gray-50 p-3 rounded-lg"><p class="text-xs text-gray-500">Umidade Solo</p><p class="text-lg font-bold" id="global-solo_umid">--</p></div>
@@ -86,7 +86,7 @@
                     <div class="flex justify-between"><span class="text-sm text-gray-600">Temperatura Solo</span><span class="font-bold text-orange-500" id="detalhe-solo_temp">--</span></div>
                     <div class="flex justify-between"><span class="text-sm text-gray-600">Umidade Solo</span><span class="font-bold text-blue-500" id="detalhe-solo_umid">--</span></div>
                     <div class="flex justify-between"><span class="text-sm text-gray-600">pH Solo</span><span class="font-bold text-purple-500" id="detalhe-solo_ph">--</span></div>
-                    <div class="flex justify-between"><span class="text-sm text-gray-600">Salinidade Solo</span><span class="font-bold text-teal-500" id="detalhe-solo_sal">--</span></div>
+                    <div class="flex justify-between"><span class="text-sm text-gray-600">Salinidade Solo</span><span class="font-bold text-cian-500" id="detalhe-solo_sal">--</span></div>
 
                     <h3 class="text-xs font-bold text-gray-400 uppercase pt-2 border-t">Nutrientes (NPK)</h3>
                     <div class="flex justify-between"><span class="text-sm text-gray-600">Nitrogênio (N)</span><span class="font-bold text-green-600" id="detalhe-solo_n">--</span></div>
