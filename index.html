@@ -3,125 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoramento de Solo - Grid 5x5</title>
+    <title>Monitoramento de Solo - Tempo Real</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .grid-cell { transition: background-color 0.5s ease, transform 0.2s ease; cursor: pointer; }
-        .grid-cell:hover { transform: scale(1.05); z-index: 10; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        .active-cell { border-color: #111827; border-width: 3px; }
         .global-card { transition: all 0.2s ease; cursor: pointer; border: 2px solid transparent; }
         .global-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        
+        /* Camada interativa do Grid */
+        .ui-cell { transition: all 0.2s ease; cursor: pointer; backdrop-filter: blur(2px); }
+        .ui-cell:hover { background-color: rgba(255, 255, 255, 0.2); border-color: rgba(255, 255, 255, 0.9); transform: scale(1.05); z-index: 20; }
+        .active-cell { background-color: rgba(255, 255, 255, 0.3); border-color: #ffffff; border-width: 3px; box-shadow: 0 0 10px rgba(0,0,0,0.3); }
+        
+        /* Camada do Mapa de Calor (fundo) */
+        .heat-cell { transition: background-color 1.5s ease-in-out; } /* Transição suave de 1.5s ao mudar os dados */
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans p-4 md:p-6 min-h-screen">
 
     <div class="max-w-6xl mx-auto space-y-6">
-        <!-- Cabeçalho -->
-        <header class="bg-white p-6 rounded-xl shadow-sm flex items-center justify-between">
-            <h1 class="text-2xl font-bold text-green-700">Painel de Monitoramento Agrícola</h1>
-            <div class="text-sm text-gray-500">Status: <span class="text-green-500 font-bold">Online</span></div>
+        <!-- Cabeçalho e Painel de Simulação -->
+        <header class="bg-white p-6 rounded-xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-green-700">Monitoramento Agrícola</h1>
+                <div class="text-sm text-gray-500 mt-1">Status: <span class="text-green-500 font-bold">Online (Simulação Ativa)</span></div>
+            </div>
+            
+            <!-- Controle de Ciclo Temporal -->
+            <div class="bg-gray-50 border p-3 rounded-lg flex items-center gap-4 min-w-[300px]">
+                <div class="flex-1">
+                    <p class="text-xs text-gray-500 uppercase tracking-wide font-bold">Ciclo Climático</p>
+                    <p class="text-lg font-bold text-blue-700" id="season-display">Verão (Pico)</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs text-gray-500 uppercase tracking-wide font-bold">Atualização em</p>
+                    <p class="text-xl font-bold text-gray-800 font-mono" id="sim-timer">15s</p>
+                </div>
+                <!-- Mini barra de progresso do timer -->
+                <div class="absolute bottom-0 left-0 h-1 bg-blue-500 transition-all duration-1000 ease-linear rounded-b-lg" id="timer-bar" style="width: 100%;"></div>
+            </div>
         </header>
 
-        <!-- Variáveis Globais (Clicáveis para Mapa de Calor) -->
+        <!-- Variáveis Globais (Clicáveis) -->
         <section class="bg-white p-6 rounded-xl shadow-sm">
-            <h2 class="text-lg font-semibold mb-2 text-gray-700">Condições Globais (Clique para ver o Mapa de Calor)</h2>
-            <p class="text-xs text-gray-500 mb-4">Os valores representam a média do terreno. Clique nos blocos para mapear a distribuição no grid.</p>
+            <h2 class="text-lg font-semibold mb-2 text-gray-700">Condições Globais</h2>
             
             <div class="space-y-4">
-                <!-- Atmosfera -->
                 <div>
-                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Atmosfera</h3>
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Atmosfera (Média)</h3>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <div id="btn-ar_temp" onclick="setHeatmap('ar_temp')" class="global-card bg-gray-50 p-4 rounded-lg"><p class="text-sm text-gray-500">Temperatura Ar</p><p class="text-xl font-bold" id="global-ar_temp">--</p></div>
-                        <div id="btn-ar_umid" onclick="setHeatmap('ar_umid')" class="global-card bg-gray-50 p-4 rounded-lg"><p class="text-sm text-gray-500">Umidade Ar</p><p class="text-xl font-bold" id="global-ar_umid">--</p></div>
-                        <div id="btn-ar_pressao" onclick="setHeatmap('ar_pressao')" class="global-card bg-gray-50 p-4 rounded-lg"><p class="text-sm text-gray-500">Pressão</p><p class="text-xl font-bold" id="global-ar_pressao">--</p></div>
-                        <div id="btn-ar_irrad" onclick="setHeatmap('ar_irrad')" class="global-card bg-gray-50 p-4 rounded-lg"><p class="text-sm text-gray-500">Irradiância</p><p class="text-xl font-bold" id="global-ar_irrad">--</p></div>
+                        <div id="btn-ar_temp" onclick="setHeatmap('ar_temp')" class="global-card bg-gray-50 p-3 rounded-lg"><p class="text-xs text-gray-500">Temperatura Ar</p><p class="text-lg font-bold transition-all duration-1000" id="global-ar_temp">--</p></div>
+                        <div id="btn-ar_umid" onclick="setHeatmap('ar_umid')" class="global-card bg-gray-50 p-3 rounded-lg"><p class="text-xs text-gray-500">Umidade Ar</p><p class="text-lg font-bold transition-all duration-1000" id="global-ar_umid">--</p></div>
+                        <div id="btn-ar_pressao" onclick="setHeatmap('ar_pressao')" class="global-card bg-gray-50 p-3 rounded-lg"><p class="text-xs text-gray-500">Pressão</p><p class="text-lg font-bold transition-all duration-1000" id="global-ar_pressao">--</p></div>
+                        <div id="btn-ar_irrad" onclick="setHeatmap('ar_irrad')" class="global-card bg-gray-50 p-3 rounded-lg"><p class="text-xs text-gray-500">Irradiância</p><p class="text-lg font-bold transition-all duration-1000" id="global-ar_irrad">--</p></div>
                     </div>
                 </div>
-
-                <!-- Solo -->
-                <div class="pt-2">
+                <div>
                     <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Solo (Média)</h3>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <div id="btn-solo_temp" onclick="setHeatmap('solo_temp')" class="global-card bg-gray-50 p-4 rounded-lg"><p class="text-sm text-gray-500">Temperatura Solo</p><p class="text-xl font-bold" id="global-solo_temp">--</p></div>
-                        <div id="btn-solo_umid" onclick="setHeatmap('solo_umid')" class="global-card bg-gray-50 p-4 rounded-lg"><p class="text-sm text-gray-500">Umidade Solo</p><p class="text-xl font-bold text-blue-600" id="global-solo_umid">--</p></div>
-                        <div id="btn-solo_ph" onclick="setHeatmap('solo_ph')" class="global-card bg-gray-50 p-4 rounded-lg"><p class="text-sm text-gray-500">pH Solo</p><p class="text-xl font-bold text-purple-600" id="global-solo_ph">--</p></div>
-                        <div id="btn-solo_sal" onclick="setHeatmap('solo_sal')" class="global-card bg-gray-50 p-4 rounded-lg"><p class="text-sm text-gray-500">Salinidade Solo</p><p class="text-xl font-bold text-teal-600" id="global-solo_sal">--</p></div>
+                        <div id="btn-solo_temp" onclick="setHeatmap('solo_temp')" class="global-card bg-gray-50 p-3 rounded-lg"><p class="text-xs text-gray-500">Temperatura Solo</p><p class="text-lg font-bold transition-all duration-1000" id="global-solo_temp">--</p></div>
+                        <div id="btn-solo_umid" onclick="setHeatmap('solo_umid')" class="global-card bg-gray-50 p-3 rounded-lg"><p class="text-xs text-gray-500">Umidade Solo</p><p class="text-lg font-bold text-blue-600 transition-all duration-1000" id="global-solo_umid">--</p></div>
+                        <div id="btn-solo_ph" onclick="setHeatmap('solo_ph')" class="global-card bg-gray-50 p-3 rounded-lg"><p class="text-xs text-gray-500">pH Solo</p><p class="text-lg font-bold text-purple-600 transition-all duration-1000" id="global-solo_ph">--</p></div>
+                        <div id="btn-solo_sal" onclick="setHeatmap('solo_sal')" class="global-card bg-gray-50 p-3 rounded-lg"><p class="text-xs text-gray-500">Salinidade Solo</p><p class="text-lg font-bold text-teal-600 transition-all duration-1000" id="global-solo_sal">--</p></div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Área Principal: Grid e Detalhes da Célula -->
+        <!-- Área Principal -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             
-            <!-- Mapa de Calor (Grid 5x5) -->
-            <section class="md:col-span-2 bg-white p-6 rounded-xl shadow-sm flex flex-col items-center">
-                <div class="flex justify-between items-center w-full mb-2">
-                    <h2 class="text-lg font-semibold text-gray-700">Mapa do Terreno (25 m²)</h2>
-                    <span class="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-1 rounded border border-gray-300" id="current-heatmap-badge">Visualizando: Umidade Solo</span>
+            <!-- Mapa de Calor Suavizado -->
+            <section class="md:col-span-2 bg-gray-800 p-6 rounded-xl shadow-inner flex flex-col items-center relative overflow-hidden">
+                <div class="flex justify-between items-center w-full mb-4 z-10">
+                    <h2 class="text-lg font-semibold text-white">Mapa do Terreno (25 ha²)</h2>
+                    <span class="bg-gray-900/50 text-gray-100 text-xs font-bold px-3 py-1 rounded border border-gray-600 backdrop-blur-sm" id="current-heatmap-badge">Visualizando: Umidade Solo</span>
                 </div>
                 
-                <!-- Barra de Escala de Cores (Legenda) -->
-                <div class="w-full max-w-md mb-4">
-                    <div class="h-3 w-full rounded" style="background: linear-gradient(to right, hsl(240, 100%, 50%), hsl(180, 100%, 50%), hsl(120, 100%, 50%), hsl(60, 100%, 50%), hsl(0, 100%, 50%));"></div>
-                    <div class="flex justify-between text-xs text-gray-500 mt-1 font-bold">
+                <!-- Barra de Escala -->
+                <div class="w-full max-w-md mb-6 z-10 bg-gray-900/50 p-2 rounded backdrop-blur-sm border border-gray-700">
+                    <div class="h-2 w-full rounded" style="background: linear-gradient(to right, hsl(240, 100%, 50%), hsl(180, 100%, 50%), hsl(120, 100%, 50%), hsl(60, 100%, 50%), hsl(0, 100%, 50%));"></div>
+                    <div class="flex justify-between text-[10px] text-gray-300 mt-1 font-bold">
                         <span id="legend-min">Min</span>
-                        <span>Média</span>
                         <span id="legend-max">Max</span>
                     </div>
                 </div>
                 
-                <div id="soil-grid" class="grid grid-cols-5 gap-1 w-full max-w-md aspect-square bg-gray-300 p-1 rounded-lg">
-                    <!-- Gerado via JavaScript -->
+                <!-- CONTAINER DO MAPA -->
+                <div class="relative w-full max-w-md aspect-square rounded-xl overflow-hidden border border-gray-700 bg-black">
+                    
+                    <!-- Camada 1: Cores Desfocadas (Heatmap Contínuo) -->
+                    <!-- scale(1.15) garante que o blur passe das bordas e não deixe margens brancas/pretas -->
+                    <div id="heatmap-layer" class="absolute inset-0 grid grid-cols-5 gap-0" style="filter: blur(28px); transform: scale(1.15);">
+                        <!-- Gerado via JS -->
+                    </div>
+
+                    <!-- Camada 2: Grid UI Interativo (Quadrados com borda) -->
+                    <div id="ui-layer" class="absolute inset-0 grid grid-cols-5 gap-2 p-2 z-10">
+                        <!-- Gerado via JS -->
+                    </div>
                 </div>
-                <p class="text-sm text-gray-400 mt-4 text-center">Clique em um quadrado do mapa para ver os dados exatos daquele ponto.</p>
             </section>
 
-            <!-- Painel de Detalhes Específicos -->
-            <section class="bg-white p-6 rounded-xl shadow-sm h-fit">
-                <h2 class="text-lg font-semibold mb-4 text-gray-700 border-b pb-2">Detalhes - Célula <span id="cell-id-display" class="text-blue-600 font-bold">--</span></h2>
+            <!-- Painel de Detalhes -->
+            <section class="bg-white p-6 rounded-xl shadow-sm h-fit border-t-4 border-blue-500 transition-all" id="details-panel">
+                <h2 class="text-lg font-semibold mb-4 text-gray-700 border-b pb-2">Detalhes - Setor <span id="cell-id-display" class="text-blue-600 font-bold">--</span></h2>
                 
                 <div class="space-y-3">
-                    <h3 class="text-xs font-bold text-gray-400 uppercase">Atmosfera</h3>
-                    <div class="flex justify-between"><span class="text-sm text-gray-600">Temp. Ar</span><span class="font-medium" id="detalhe-ar_temp">--</span></div>
-                    <div class="flex justify-between"><span class="text-sm text-gray-600">Umid. Ar</span><span class="font-medium" id="detalhe-ar_umid">--</span></div>
-                    <div class="flex justify-between"><span class="text-sm text-gray-600">Pressão</span><span class="font-medium" id="detalhe-ar_pressao">--</span></div>
-                    <div class="flex justify-between"><span class="text-sm text-gray-600">Irradiância</span><span class="font-medium" id="detalhe-ar_irrad">--</span></div>
+                    <h3 class="text-xs font-bold text-gray-400 uppercase">Atmosfera Local</h3>
+                    <div class="flex justify-between"><span class="text-sm text-gray-600">Temp. Ar</span><span class="font-medium transition-all" id="detalhe-ar_temp">--</span></div>
+                    <div class="flex justify-between"><span class="text-sm text-gray-600">Umid. Ar</span><span class="font-medium transition-all" id="detalhe-ar_umid">--</span></div>
+                    <div class="flex justify-between"><span class="text-sm text-gray-600">Pressão</span><span class="font-medium transition-all" id="detalhe-ar_pressao">--</span></div>
+                    <div class="flex justify-between"><span class="text-sm text-gray-600">Irradiância</span><span class="font-medium transition-all" id="detalhe-ar_irrad">--</span></div>
 
-                    <h3 class="text-xs font-bold text-gray-400 uppercase pt-2 border-t">Solo</h3>
-                    <div class="flex justify-between"><span class="text-sm text-gray-600">Temperatura Solo</span><span class="font-bold text-orange-500" id="detalhe-solo_temp">--</span></div>
-                    <div class="flex justify-between"><span class="text-sm text-gray-600">Umidade Solo</span><span class="font-bold text-blue-500" id="detalhe-solo_umid">--</span></div>
-                    <div class="flex justify-between"><span class="text-sm text-gray-600">pH Solo</span><span class="font-bold text-purple-500" id="detalhe-solo_ph">--</span></div>
-                    <div class="flex justify-between"><span class="text-sm text-gray-600">Salinidade Solo</span><span class="font-bold text-teal-500" id="detalhe-solo_sal">--</span></div>
+                    <h3 class="text-xs font-bold text-gray-400 uppercase pt-2 border-t">Condição do Solo</h3>
+                    <div class="flex justify-between"><span class="text-sm text-gray-600">Temperatura</span><span class="font-bold text-orange-500 transition-all" id="detalhe-solo_temp">--</span></div>
+                    <div class="flex justify-between"><span class="text-sm text-gray-600">Umidade</span><span class="font-bold text-blue-500 transition-all" id="detalhe-solo_umid">--</span></div>
+                    <div class="flex justify-between"><span class="text-sm text-gray-600">pH</span><span class="font-bold text-purple-500 transition-all" id="detalhe-solo_ph">--</span></div>
+                    <div class="flex justify-between"><span class="text-sm text-gray-600">Salinidade</span><span class="font-bold text-teal-500 transition-all" id="detalhe-solo_sal">--</span></div>
                 </div>
             </section>
         </div>
     </div>
 
     <script>
-        // Simulando dados do grid com gradiente espacial (para não parecer um chiado aleatório)
-        const soilData = [];
-        for(let i = 0; i < 25; i++) {
-            let x = i % 5; // Posição X no grid (0 a 4)
-            let y = Math.floor(i / 5); // Posição Y no grid (0 a 4)
-            
-            soilData.push({
-                id: i + 1,
-                ar_temp: (27 + x * 0.2 + y * 0.3 + Math.random() * 0.5).toFixed(1),
-                ar_umid: (60 + (4-x) * 1.5 + Math.random() * 2).toFixed(1),
-                ar_pressao: Math.floor(1010 + y * 0.5 + Math.random() * 2),
-                ar_irrad: Math.floor(800 + x * 20 - y * 10 + Math.random() * 50),
-                solo_temp: (22 + x * 0.8 + Math.random() * 1).toFixed(1),
-                solo_umid: (40 + (4-x) * 4 + (4-y) * 2 + Math.random() * 3).toFixed(1), // Mais úmido no topo esquerdo
-                solo_ph: (5.5 + x * 0.2 + y * 0.1 + Math.random() * 0.2).toFixed(1),
-                solo_sal: (1.2 + y * 0.15 + Math.random() * 0.1).toFixed(2)
-            });
-        }
+        /* === CONFIGURAÇÕES DA SIMULAÇÃO === */
+        const INTERVAL_SECONDS = 15; // Atualiza a cada 15s
+        const TOTAL_STEPS = 8;       // 8 etapas = 1 ciclo completo de 2 minutos
+        
+        let currentStep = 0;
+        let timeRemaining = INTERVAL_SECONDS;
+        let soilData = [];
+        let activeHeatmapVar = 'solo_umid';
+        let selectedCellId = 1;
 
         const labels = {
-            ar_temp: 'Temperatura do Ar', ar_umid: 'Umidade do Ar', ar_pressao: 'Pressão', ar_irrad: 'Irradiância',
-            solo_temp: 'Temperatura Solo', solo_umid: 'Umidade Solo', solo_ph: 'pH Solo', solo_sal: 'Salinidade Solo'
+            ar_temp: 'Temperatura do Ar', ar_umid: 'Umidade do Ar', ar_pressao: 'Pressão Atmosférica', ar_irrad: 'Irradiância Solar',
+            solo_temp: 'Temperatura do Solo', solo_umid: 'Umidade do Solo', solo_ph: 'pH do Solo', solo_sal: 'Salinidade do Solo'
         };
 
         const units = {
@@ -129,76 +146,129 @@
             solo_temp: ' °C', solo_umid: ' %', solo_ph: '', solo_sal: ' mS/cm'
         };
 
-        // Calcula as médias para os painéis globais no topo
-        function updateGlobalAverages() {
+        const seasons = [
+            "Verão (Pico)", "Verão/Outono", 
+            "Outono (Transição)", "Outono/Inverno", 
+            "Inverno (Pico)", "Inverno/Primavera", 
+            "Primavera (Transição)", "Primavera/Verão"
+        ];
+
+        /* === GERADOR DE DADOS MATEMÁTICO === */
+        function generateCycleData(step) {
+            // O ângulo vai de 0 a 2*PI ao longo dos 8 passos
+            const angle = (step / TOTAL_STEPS) * 2 * Math.PI; 
+            const phase = Math.cos(angle); // +1 no Verão (step 0), -1 no Inverno (step 4)
+            
+            const newData = [];
+            for(let i = 0; i < 25; i++) {
+                let x = i % 5;
+                let y = Math.floor(i / 5);
+                
+                // Variações espaciais fixas do terreno para criar manchas naturais no mapa
+                const spatTemp = x * 0.4 + y * 0.2; 
+                const spatUmid = (4-x) * 2.5 + (4-y) * 1.5; 
+
+                // Adiciona a "fase" climática global + fator espacial local + ruído aleatório suave
+                newData.push({
+                    id: i + 1,
+                    ar_temp: (25 + phase * 6 + spatTemp + Math.random() * 0.5).toFixed(1),
+                    ar_umid: (65 - phase * 15 + spatUmid + Math.random() * 1).toFixed(1), // Umidade cai no calor
+                    ar_pressao: Math.floor(1012 - phase * 4 + y + Math.random() * 2),
+                    ar_irrad: Math.floor(600 + phase * 350 + x * 15 - y * 10 + Math.random() * 25),
+                    solo_temp: (22 + phase * 4 + spatTemp * 0.8 + Math.random() * 0.3).toFixed(1),
+                    solo_umid: (50 - phase * 12 + spatUmid * 1.2 + Math.random() * 1.5).toFixed(1),
+                    solo_ph: (6.0 + phase * 0.1 + x * 0.15 + Math.random() * 0.05).toFixed(1),
+                    solo_sal: (1.5 + phase * 0.25 + y * 0.1 + Math.random() * 0.05).toFixed(2)
+                });
+            }
+            return newData;
+        }
+
+        /* === INICIALIZAÇÃO DA INTERFACE === */
+        const heatmapLayer = document.getElementById('heatmap-layer');
+        const uiLayer = document.getElementById('ui-layer');
+
+        function initGrids() {
+            for(let i = 1; i <= 25; i++) {
+                // Div do Background Desfocado
+                const hCell = document.createElement('div');
+                hCell.id = `heat-cell-${i}`;
+                hCell.className = 'heat-cell w-full h-full';
+                heatmapLayer.appendChild(hCell);
+
+                // Div Interativa (Quadrado arredondado transparente com borda)
+                const uCell = document.createElement('div');
+                uCell.id = `ui-cell-${i}`;
+                uCell.className = 'ui-cell rounded-xl border border-white/30 flex items-center justify-center text-white/50 text-xs font-bold font-mono shadow-sm';
+                uCell.innerText = i;
+                uCell.onclick = () => selectCell(i);
+                uiLayer.appendChild(uCell);
+            }
+        }
+
+        /* === ATUALIZAÇÃO DA VIEW === */
+        function updateDashboard() {
+            // Atualiza Médias Globais
             Object.keys(labels).forEach(key => {
                 const sum = soilData.reduce((acc, cell) => acc + parseFloat(cell[key]), 0);
                 const avg = sum / 25;
-                const isInteger = ['ar_pressao', 'ar_irrad'].includes(key);
-                const displayValue = isInteger ? Math.round(avg) : avg.toFixed(1);
-                document.getElementById(`global-${key}`).innerText = displayValue + units[key];
+                const isInt = ['ar_pressao', 'ar_irrad'].includes(key);
+                document.getElementById(`global-${key}`).innerText = (isInt ? Math.round(avg) : avg.toFixed(1)) + units[key];
             });
+
+            // Atualiza o Mapa de Calor
+            setHeatmap(activeHeatmapVar);
+            
+            // Atualiza Painel Lateral da Célula Ativa
+            updateDetailsPanel(selectedCellId);
+            
+            // Atualiza Header
+            document.getElementById('season-display').innerText = seasons[currentStep];
         }
 
-        // Renderiza o grid inicial
-        const gridContainer = document.getElementById('soil-grid');
-        soilData.forEach(data => {
-            const cell = document.createElement('div');
-            cell.id = `cell-${data.id}`;
-            cell.className = `grid-cell rounded h-full w-full flex items-center justify-center text-xs font-bold border border-transparent shadow-sm`;
-            cell.innerText = data.id;
-            cell.onclick = () => updateDetailsPanel(data.id);
-            gridContainer.appendChild(cell);
-        });
-
-        // Troca as cores do mapa de calor (Gradiente Clássico: Azul -> Ciano -> Verde -> Amarelo -> Vermelho)
         function setHeatmap(variable) {
+            activeHeatmapVar = variable;
             document.getElementById('current-heatmap-badge').innerText = `Visualizando: ${labels[variable]}`;
 
-            // Resetar estilos dos botões globais
             document.querySelectorAll('.global-card').forEach(btn => {
-                btn.classList.remove('ring-2', 'ring-blue-500', 'border-blue-400', 'bg-blue-50');
+                btn.classList.remove('ring-2', 'ring-blue-500', 'border-blue-400', 'bg-blue-100');
             });
-            // Destacar o selecionado
-            document.getElementById('btn-' + variable).classList.add('ring-2', 'ring-blue-500', 'border-blue-400', 'bg-blue-50');
+            document.getElementById('btn-' + variable).classList.add('ring-2', 'ring-blue-500', 'border-blue-400', 'bg-blue-100');
 
-            // Pegar mínimo e máximo para normalizar a escala
             const values = soilData.map(d => parseFloat(d[variable]));
             const min = Math.min(...values);
             let max = Math.max(...values);
-            if(max === min) max = min + 1; // Evita divisão por zero
+            if(max === min) max = min + 1; 
             
-            // Atualizar os textos da barra de legenda
             document.getElementById('legend-min').innerText = min.toFixed(variable.includes('sal') ? 2 : 1) + units[variable];
             document.getElementById('legend-max').innerText = max.toFixed(variable.includes('sal') ? 2 : 1) + units[variable];
 
             soilData.forEach(data => {
                 const val = parseFloat(data[variable]);
-                // Normaliza o valor entre 0 e 1
                 const normalized = (val - min) / (max - min);
-                
-                // Mapeamento de cor HSL: 
-                // Valor 0.0 (Min) = 240 (Azul)
-                // Valor 1.0 (Max) = 0 (Vermelho)
                 const hue = (1 - normalized) * 240; 
                 
-                const cell = document.getElementById(`cell-${data.id}`);
-                // Aplica a cor com Saturação 100% e Luminosidade 50%
-                cell.style.backgroundColor = `hsl(${hue}, 100%, 50%)`;
-                
-                // Ajusta cor do texto para manter a legibilidade
-                // Tons de verde, amarelo e ciano (hue entre 40 e 180) recebem texto escuro
-                if(hue > 40 && hue < 190) {
-                    cell.style.color = 'rgba(0,0,0,0.7)';
-                    cell.style.textShadow = 'none';
-                } else {
-                    cell.style.color = 'white';
-                    cell.style.textShadow = '1px 1px 2px rgba(0,0,0,0.8)';
-                }
+                // Aplica a cor HSL na camada base desfocada
+                const hCell = document.getElementById(`heat-cell-${data.id}`);
+                hCell.style.backgroundColor = `hsl(${hue}, 100%, 50%)`;
             });
         }
 
-        // Atualiza painel de detalhes (à direita)
+        function selectCell(id) {
+            selectedCellId = id;
+            
+            document.querySelectorAll('.ui-cell').forEach(c => {
+                c.classList.remove('active-cell', 'text-white');
+                c.classList.add('text-white/50');
+            });
+            
+            const active = document.getElementById(`ui-cell-${id}`);
+            active.classList.add('active-cell', 'text-white');
+            active.classList.remove('text-white/50');
+            
+            updateDetailsPanel(id);
+        }
+
         function updateDetailsPanel(id) {
             const data = soilData[id - 1];
             document.getElementById('cell-id-display').innerText = id;
@@ -206,16 +276,35 @@
             Object.keys(labels).forEach(key => {
                 document.getElementById(`detalhe-${key}`).innerText = data[key] + units[key];
             });
-
-            // Destacar célula no grid
-            document.querySelectorAll('.grid-cell').forEach(c => c.classList.remove('active-cell'));
-            document.getElementById(`cell-${id}`).classList.add('active-cell');
         }
 
-        // Inicialização
-        updateGlobalAverages();
-        setHeatmap('solo_umid');
-        updateDetailsPanel(1);
+        /* === LOOP DE TEMPO REAL === */
+        function tickClock() {
+            timeRemaining--;
+            document.getElementById('sim-timer').innerText = timeRemaining + 's';
+            
+            // Atualiza barra de progresso do timer
+            const pct = (timeRemaining / INTERVAL_SECONDS) * 100;
+            document.getElementById('timer-bar').style.width = pct + '%';
+
+            if (timeRemaining <= 0) {
+                // Próximo passo do ciclo
+                currentStep = (currentStep + 1) % TOTAL_STEPS;
+                soilData = generateCycleData(currentStep);
+                updateDashboard();
+                timeRemaining = INTERVAL_SECONDS;
+            }
+        }
+
+        // Boot da Aplicação
+        initGrids();
+        soilData = generateCycleData(currentStep); // Gera o estado inicial (Verão)
+        updateDashboard();
+        selectCell(1); // Seleciona a célula 1 por padrão
+        
+        // Inicia o relógio
+        setInterval(tickClock, 1000);
+
     </script>
 </body>
 </html>
